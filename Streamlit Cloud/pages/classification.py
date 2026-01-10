@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from torchvision import transforms, models
 from PIL import Image
+from pathlib import Path
 
 # -------------------------------------------------
 # Page Config
@@ -13,7 +14,7 @@ st.set_page_config(
 )
 
 st.title("🖼️ Image Classification")
-st.write("Upload an image to classify using **EfficientNet-B0 (Fully Unlocked)**")
+st.write("Upload an image to classify using **EfficientNet-B3 (Fully Unlocked)**")
 
 # -------------------------------------------------
 # Device
@@ -31,24 +32,31 @@ CLASS_NAMES = [
     "potted plant", "stop sign", "traffic light", "train", "truck"
 ]
 
-NUM_CLASSES = 26
+NUM_CLASSES = len(CLASS_NAMES)
 
 # -------------------------------------------------
-# Load EfficientNet-B0 Model
+# Load EfficientNet-B3 Model
 # -------------------------------------------------
 @st.cache_resource
 def load_model():
-    model = models.efficientnet_b0(weights=None)
+    # Initialize model
+    model = models.efficientnet_b3(weights=None)
 
+    # Replace classifier
     in_features = model.classifier[1].in_features
     model.classifier[1] = nn.Linear(in_features, NUM_CLASSES)
 
-    model.load_state_dict(
-        torch.load(
-            "best_efficientnetb0_smartvision_unlocked.pth",
-            map_location=device
-        )
-    )
+    # Resolve model path (repo root)
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    MODEL_PATH = BASE_DIR / "best_efficientnet_b3.pth"
+
+    if not MODEL_PATH.exists():
+        st.error(f"❌ Model file not found at:\n{MODEL_PATH}")
+        st.stop()
+
+    # Load weights
+    state_dict = torch.load(MODEL_PATH, map_location=device)
+    model.load_state_dict(state_dict)
 
     model.to(device)
     model.eval()
@@ -57,10 +65,10 @@ def load_model():
 model = load_model()
 
 # -------------------------------------------------
-# Image Transforms (EfficientNet-B0 expects 224×224)
+# Image Transforms (EfficientNet-B3 expects 300×300)
 # -------------------------------------------------
 transform = transforms.Compose([
-    transforms.Resize((224, 224)),
+    transforms.Resize((300, 300)),
     transforms.ToTensor(),
     transforms.Normalize(
         mean=[0.485, 0.456, 0.406],
