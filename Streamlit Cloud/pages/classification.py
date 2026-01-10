@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 st.title("🖼️ Image Classification")
-st.write("Upload an image to classify using **EfficientNet-B3 (Fully Unlocked)**")
+st.write("Upload an image to classify using **EfficientNet-B0 (Fully Unlocked)**")
 
 # -------------------------------------------------
 # Device
@@ -23,7 +23,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 st.write(f"**Running on:** {device}")
 
 # -------------------------------------------------
-# Class Names (26 Classes - FIXED ORDER)
+# Class Names (26 Classes – FIXED ORDER)
 # -------------------------------------------------
 CLASS_NAMES = [
     "airplane", "bed", "bench", "bicycle", "bird", "bottle", "bowl",
@@ -35,20 +35,20 @@ CLASS_NAMES = [
 NUM_CLASSES = len(CLASS_NAMES)
 
 # -------------------------------------------------
-# Load EfficientNet-B3 Model
+# Load EfficientNet-B0 Model
 # -------------------------------------------------
 @st.cache_resource
 def load_model():
     # Initialize model
-    model = models.efficientnet_b3(weights=None)
+    model = models.efficientnet_b0(weights=None)
 
-    # Replace classifier
+    # Replace classifier head
     in_features = model.classifier[1].in_features
     model.classifier[1] = nn.Linear(in_features, NUM_CLASSES)
 
     # Resolve model path (repo root)
     BASE_DIR = Path(__file__).resolve().parent.parent
-    MODEL_PATH = BASE_DIR / "best_efficientnet_b3.pth"
+    MODEL_PATH = BASE_DIR / "best_efficientnetb0_smartvision_unlocked.pth"
 
     if not MODEL_PATH.exists():
         st.error(f"❌ Model file not found at:\n{MODEL_PATH}")
@@ -65,10 +65,10 @@ def load_model():
 model = load_model()
 
 # -------------------------------------------------
-# Image Transforms (EfficientNet-B3 expects 300×300)
+# Image Transforms (EfficientNet-B0 → 224×224)
 # -------------------------------------------------
 transform = transforms.Compose([
-    transforms.Resize((300, 300)),
+    transforms.Resize((224, 224)),
     transforms.ToTensor(),
     transforms.Normalize(
         mean=[0.485, 0.456, 0.406],
